@@ -75,30 +75,34 @@ void RemoteAuthDialog::OnFingerprint(const std::string &fingerprint) {
     int size = qr.getSize();
     const int border = 4;
 
-    const auto module_set = "0 0 0";
-    const auto module_clr = "255 255 255";
-
     std::ostringstream sb;
-    sb << "P3\n";
-    sb << size + border * 2 << " " << size + border * 2 << " 255\n";
+    sb << "P1\n";
+    sb << size + border * 2 << " " << size + border * 2 << "\n";
     for (int y = -border; y < size + border; y++) {
         for (int x = -border; x < size + border; x++) {
-            if (qr.getModule(x, y)) {
-                sb << module_set << "\n";
-            } else {
-                sb << module_clr << "\n";
-            }
+            sb << (qr.getModule(x, y) ? '1' : '0');
+            if (x != size + border - 1)
+                sb << ' ';
         }
+        sb << '\n';
     }
 
     const auto img = sb.str();
 
     auto loader = Gdk::PixbufLoader::create();
-    loader->write(reinterpret_cast<const guint8 *>(img.data()), img.size());
-    loader->close();
-    const auto pb = loader->get_pixbuf()->scale_simple(256, 256, Gdk::INTERP_NEAREST);
-
-    m_image.property_pixbuf() = pb;
+    try {
+        loader->write(reinterpret_cast<const guint8 *>(img.data()), img.size());
+        loader->close();
+    } catch (const Glib::Error &) {
+        m_status.set_text("Failed to render QR code");
+        return;
+    }
+    const auto pb = loader->get_pixbuf();
+    if (!pb) {
+        m_status.set_text("Failed to render QR code");
+        return;
+    }
+    m_image.property_pixbuf() = pb->scale_simple(256, 256, Gdk::INTERP_NEAREST);
 }
 
 void RemoteAuthDialog::OnPendingTicket(Snowflake user_id, const std::string &discriminator, const std::string &avatar_hash, const std::string &username) {
