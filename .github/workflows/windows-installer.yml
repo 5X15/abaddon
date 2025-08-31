@@ -51,6 +51,11 @@ jobs:
           mkdir -p "${artifact_dir}"
           cp build/*.exe "${artifact_dir}"
           cp -r res "${artifact_dir}/"
+          mkdir -p ${artifact_dir}
+          cp build/*.exe ${artifact_dir}
+          cp -r res ${artifact_dir}/
+        shell: bash
+
 
       - name: Create installer
         run: |
