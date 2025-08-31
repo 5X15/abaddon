@@ -1,0 +1,65 @@
+---
+name: Windows Installer
+
+'on':
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-installer:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Set up MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: mingw64
+          update: true
+          install: |
+            git
+            make
+            unzip
+            mingw-w64-x86_64-toolchain
+            mingw-w64-x86_64-cmake
+            mingw-w64-x86_64-ninja
+            mingw-w64-x86_64-sqlite3
+            mingw-w64-x86_64-nlohmann-json
+            mingw-w64-x86_64-curl
+            mingw-w64-x86_64-zlib
+            mingw-w64-x86_64-gtkmm3
+            mingw-w64-x86_64-libhandy
+            mingw-w64-x86_64-opus
+            mingw-w64-x86_64-libsodium
+            mingw-w64-x86_64-spdlog
+            mingw-w64-x86_64-nsis
+
+      - name: Build
+        run: |
+          cmake -GNinja -Bbuild -DCMAKE_BUILD_TYPE=RelWithDebInfo
+          cmake --build build
+
+      - name: Prepare files
+        run: |
+          artifact_dir=build/package
+          mkdir -p "${artifact_dir}"
+          cp build/*.exe "${artifact_dir}"
+          cp -r res "${artifact_dir}/"
+
+      - name: Create installer
+        run: |
+          makensis -DINPUT_DIR=build/package \
+                   -DOUTPUT=abaddon-setup.exe \
+                   ci/windows-installer.nsi
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: abaddon-setup
+          path: abaddon-setup.exe
