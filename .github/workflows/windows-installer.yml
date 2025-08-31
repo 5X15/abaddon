@@ -48,6 +48,7 @@ jobs:
       - name: Prepare files
         run: |
           set -e
+
           artifact_dir=build/package
           mkdir -p "${artifact_dir}"
           cp build/*.exe "${artifact_dir}"
@@ -58,6 +59,15 @@ jobs:
         run: |
           win_path=$(cygpath -w "$PWD")
           makensis -DINPUT_DIR="${win_path}\\build\\package" \
+          mkdir -p ${artifact_dir}
+          cp build/*.exe ${artifact_dir}
+          cp -r res ${artifact_dir}/
+        shell: bash
+
+
+      - name: Create installer
+        run: |
+          makensis -DINPUT_DIR=build/package \
                    -DOUTPUT=abaddon-setup.exe \
                    ci/windows-installer.nsi
 
