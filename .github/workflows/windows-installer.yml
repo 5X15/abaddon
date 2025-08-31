@@ -47,10 +47,18 @@ jobs:
 
       - name: Prepare files
         run: |
+          set -e
+
           artifact_dir=build/package
           mkdir -p "${artifact_dir}"
           cp build/*.exe "${artifact_dir}"
           cp -r res "${artifact_dir}/"
+          ls -R "${artifact_dir}"
+
+      - name: Create installer
+        run: |
+          win_path=$(cygpath -w "$PWD")
+          makensis -DINPUT_DIR="${win_path}\\build\\package" \
           mkdir -p ${artifact_dir}
           cp build/*.exe ${artifact_dir}
           cp -r res ${artifact_dir}/
